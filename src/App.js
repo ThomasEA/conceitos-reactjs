@@ -1,26 +1,76 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 
 import "./styles.css";
+import api from "./services/api";
 
 function App() {
+  
+  const [repositories, setRepositories] = useState([]);
+
+  useEffect(() => {
+    api.get('repositories')
+      .then( response => {
+        setRepositories(response.data);
+      })
+      .catch( reason => {
+        console.log(`Error: ${reason}`);
+      })
+  }, []);
+
   async function handleAddRepository() {
-    // TODO
+    const repository = {
+      title: 'New repository', 
+      url: 'https://newrepository.com.br', 
+      techs: [
+        'ReactJS',
+        'C#'
+      ]
+    };
+
+    api.post('repositories', repository)
+      .then( response => {
+        if (response.status === 200)
+          addRepositoryToList(response.data);
+      })
+      .catch( reason => {
+        console.log(`Error: ${reason}`)
+      });
+  }
+
+  function addRepositoryToList(repository) {
+    const newRepositories = [...repositories, repository];
+    setRepositories(newRepositories);
   }
 
   async function handleRemoveRepository(id) {
-    // TODO
+    api.delete(`repositories/${id}`)
+      .then( response => {
+        if (response.status === 204)
+          removeRepositoryFromList(id);
+      })
+      .catch( reason => {
+        console.log(`Error: ${reason}`);
+      })
+  }
+
+  function removeRepositoryFromList(id) {
+    const repositoriesFiltered = repositories.filter(repository => repository.id !== id);
+    setRepositories(repositoriesFiltered);
   }
 
   return (
     <div>
       <ul data-testid="repository-list">
-        <li>
-          Repositório 1
-
-          <button onClick={() => handleRemoveRepository(1)}>
-            Remover
-          </button>
-        </li>
+        {
+          repositories.map(repository => (
+            <li key={repository.id}>
+              {repository.title}
+            <button onClick={() => handleRemoveRepository(repository.id)}>
+              Remover
+            </button>
+          </li>
+          ))
+        }
       </ul>
 
       <button onClick={handleAddRepository}>Adicionar</button>
